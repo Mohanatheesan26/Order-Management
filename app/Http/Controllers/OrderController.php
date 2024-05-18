@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\ProcessOrder;
 use App\Models\Order;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -22,18 +23,8 @@ class OrderController extends Controller
         $order->order_status = 'Processing';
         $order->save();
 
-        // Prepare data for the third-party API
-        $data = [
-            'Order_ID' => $order->id,
-            'Customer_Name' => $order->customer_name,
-            'Order_Value' => $order->order_value,
-            'Order_Date' => $order->created_at->toDateTimeString(),
-            'Order_Status' => $order->order_status,
-            'Process_ID' => $order->process_id,
-        ];
-
-        // Send data to the third-party API
-        Http::post('https://wibip.free.beeceptor.com/order', $data);
+        // Dispatch the job to process the order
+        ProcessOrder::dispatch($order);
 
         return response()->json([
             'Order_ID' => $order->id,
